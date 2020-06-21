@@ -1,0 +1,19 @@
+library(tidyverse)
+
+schools <- read_csv("Data/edubasealldata20200621.csv") %>% 
+  clean_names() %>% 
+  filter(!type_of_establishment_name %in% c("MiscellaneousSpecial",
+                                              "post 16 institution",
+                                              "Further education",
+                                              "Secure units",
+                                              "Higher education institutions",
+                                              "University technical college",
+                                              "City technology college")) %>%
+  select(easting, northing, establishment_name)
+
+
+
+%>% select(Easting, Northing,)
+
+names(schools)
+

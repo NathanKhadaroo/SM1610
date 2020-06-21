@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1592699494880.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "85878E65",
+    "lastKnownWriteTime" : 1592428220,
+    "last_content_update" : 1592428220,
+    "path" : "~/Desktop/Sheffield/SMI610 day 3/SMI_CDT2020_ML.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "51,2",
+        "scrollLine" : "38"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

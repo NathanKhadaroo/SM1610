@@ -1,0 +1,26 @@
+"0","library(tidyverse)"
+"0","library(janitor)"
+"0","library(gender)"
+"0",""
+"0","fms_clean <- read_csv(""./Data/clean_fms.csv"")"
+"2","Parsed with column specification:
+cols(
+  X1 = [32mcol_double()[39m,
+  X = [32mcol_double()[39m,
+  repurl = [31mcol_character()[39m,
+  lat = [32mcol_double()[39m,
+  lng = [32mcol_double()[39m,
+  title = [31mcol_character()[39m,
+  categorynametime = [31mcol_character()[39m,
+  description = [31mcol_character()[39m,
+  who = [31mcol_character()[39m,
+  category = [31mcol_character()[39m,
+  repmode = [31mcol_character()[39m,
+  date = [31mcol_character()[39m,
+  dayofweek = [31mcol_character()[39m,
+  month = [31mcol_character()[39m,
+  day = [31mcol_character()[39m,
+  year = [31mcol_character()[39m,
+  hour = [32mcol_double()[39m
+)
+"

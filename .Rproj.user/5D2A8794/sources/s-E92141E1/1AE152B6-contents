@@ -1,0 +1,456 @@
+#installing packages
+
+my_packages <- c("tidyverse",
+                 "fivethirtyeight",
+                 "gapminder",
+                 "ggrepel",
+                 "gganimate",
+                 "ggridges",
+                 "ggthemes",
+                 "coefplot",
+                 "jsonlite",
+                 "statnet",
+                 "igraph",
+                 "tm",
+                 "tidytext",
+                 "readtext",
+                 "rvest",
+                 "stringr",
+                 "devtools",
+                 "wordcloud",
+                 "proxy",
+                 "fpc",
+                 "cluster",
+                 "janeaustenr",
+                 "gutenbergr",
+                 "ggraph",
+                 "syuzhet",
+                 "plotly",
+                 "caret",
+                 "ggplot2",
+                 "mlbench",
+                 "class",
+                 "caTools",
+                 "randomForest",
+                 "ranger",
+                 "kernlab",
+                 "class",
+                 "glmnet",
+                 "naivebayes",
+                 "rpart",
+                 "rpart.plot")
+
+install.packages(my_packages)
+
+install.packages("RcppArmadillo")
+
+#loading packages
+
+library(tidyverse)
+
+#making our first graph. A line chart!
+
+ggplot(data = economics) + 
+  aes(x = date, y = unemploy)+
+  geom_line()
+
+#now a barplot! yayyy!
+
+ggplot(data = midwest) +
+  aes(x = state)+
+  geom_bar()
+
+#now a histogram
+
+ggplot(data = diamonds) +
+  aes(x = price) +
+  geom_histogram()
+
+#density curve
+
+ggplot(data = diamonds) +
+  aes(x = price)+
+  geom_density()
+
+#and a freq polygon?
+
+ggplot(data = diamonds) +
+  aes(x = price)+
+  geom_freqpoly()
+
+#boxplot
+
+ggplot(data = diamonds) +
+  aes(x = color, y = price)+
+  geom_boxplot()
+
+#another denisty plot with colored groups
+
+ggplot(data = diamonds) +
+  aes(x = price, color = color) +
+  geom_density()
+
+
+#a scatterplot 
+
+ggplot(data = mpg) +
+  aes(x = displ, y = hwy) +
+  geom_point()
+
+
+##task 1
+
+pokemon <- read_csv("pokemon.csv")
+
+#type counts
+
+ggplot(data = pokemon) +
+  aes(x = Type) +
+  geom_bar()
+
+#hp distribution
+
+ggplot(data = pokemon) +
+  aes(x = HP) +
+  geom_density()
+
+#he protec, he attac
+
+ggplot(data = pokemon) +
+  aes(x = Attack, y = Defense) +
+  geom_point()
+
+#hp vs type
+
+ggplot(data = pokemon) +
+  aes(Type, HP) +
+  geom_col()
+
+#extending bar charts
+
+pokemon %>% 
+  group_by(Type) %>% 
+  summarise(HP_mean = mean(HP)) %>% 
+  mutate(Type = fct_reorder(Type, HP_mean)) %>% 
+  ggplot()+
+  aes(y = Type, x = HP_mean )+
+  geom_col()
+
+#tarantino time
+
+names(tarantino)
+
+ggplot(data = tarantino) +
+  aes(x = word) + 
+  geom_bar()
+
+tarantino %>% 
+  group_by(word) %>% 
+  na.omit %>% 
+  summarise(howmany = n()) %>% 
+  filter(howmany > 20) %>% 
+  mutate(word = fct_reorder(word, howmany)) %>% 
+  ggplot()+
+  aes(y = word, x = howmany) +
+  geom_col()
+
+tarantino %>% 
+  group_by(word) %>% 
+  na.omit %>% 
+  mutate(howmany = n()) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, howmany)) %>% 
+  filter(howmany > 20) %>%
+  ggplot()+
+  aes(y = movie, fill = word)+
+  geom_bar(position = "dodge")+
+  theme_spongeBob()+
+  labs(title = "Swearing is bad",
+       subtitle = "M'kay",
+       caption = "Why did I do this") +
+  theme_spongeBob(title.font = "Some Time Later",
+                  text.font = "Some Time Later",
+                  title.size = 22,
+                  subtitle.size = 16,
+                  axis.title.size = 16,
+                  axis.text.size = 14,
+                  legend.title.size = 14)
+
+pokemon %>%
+  group_by(generation) %>% 
+  na.omit %>% 
+  mutate(howmany = n()) %>%
+  ungroup %>% 
+  mutate(generation = fct_reorder(generation, howmany)) %>%
+  mutate(Type = fct_reorder(Type, howmany)) %>%
+  ggplot() + 
+  aes(y = generation, fill = Type) +
+  geom_bar(position = "dodge")
+
+##extending scatterplots
+
+library(gapminder)
+
+#gdp vs life exp
+
+ggplot(data = gapminder) +
+  aes(x = gdpPercap, y = lifeExp) +
+  geom_point()
+
+#same with log gdp 
+
+ggplot(gapminder) +
+  aes(x = log(gdpPercap), y = lifeExp) +
+  geom_point()
+
+ggplot(gapminder) + 
+  aes(x = gdpPercap, y = lifeExp, size = pop,
+      colour = continent) +
+  geom_point(alpha = .3)+
+  scale_x_log10()+
+  geom_smooth(method = 'lm')+
+  facet_wrap(~continent)
+
+library(ggrepel)
+
+gapminder %>% 
+  group_by(continent, year) %>% 
+  summarise(log_gdp_per_cap_sum = 
+              sum(log(gdpPercap)), 
+            life_exp_sum = sum(lifeExp),
+            pop_sum = sum(as.numeric(pop)),
+            n_countries = n()) %>% 
+  mutate(mean_log_gdp_per_cap = log_gdp_per_cap_sum/n_countries,
+         mean_life_exp = life_exp_sum/n_countries,
+         mean_pop = pop_sum/n_countries) %>% 
+  ggplot()+
+  aes(x = mean_log_gdp_per_cap, 
+      y = mean_life_exp, 
+      label = year) +
+  geom_point(aes(colour = continent, 
+             size = mean_pop))+
+  geom_label_repel()
+
+library(gganimate)
+
+#task
+
+names(midwest)
+
+midwest %>% 
+  ggplot()+
+  aes(x = popdensity, y = percollege, size = poptotal, color = state)+
+  geom_point()+
+  scale_x_log10()
+
+#make a graph of the population density and % college-educated of each state, with size proportional to the number of people in each one
+  
+
+midwest %>% 
+  ggplot()+
+  aes(x = popdensity, y = percollege, size = poptotal, color = state) +
+  geom_point()+
+  scale_x_log10()
+
+
+
+midwest %>% 
+  group_by(state, popdensity) %>% 
+  summarise(pop_den_per_state = )
+  ggplot()+
+  aes(x = popdensity, y = percollege, size = poptotal)+
+  scale_x_log10()
+
+  
+election <- read_csv("election2017.csv")
+
+election %>% 
+  mutate(percent_tory = con/valid_votes) %>% 
+  filter(country_name != "Northern Ireland") %>% 
+  ggplot() +
+  aes(x = percent_tory, fill = country_name) +
+  geom_histogram(position = 'identity',
+                 alpha = 0.3)
+
+
+election %>% 
+  mutate(percent_tory = con/valid_votes,
+         region_name = fct_reorder(region_name, percent_tory)) %>% 
+  filter(country_name != "Northern Ireland") %>% 
+  ggplot()+
+  aes(x = percent_tory) +
+  geom_density()+
+  facet_wrap(~ region_name)
+
+library(ggridges)
+
+election %>% 
+  mutate(percent_tory = con/valid_votes,
+         region_name = fct_reorder(region_name, percent_tory)) %>% 
+  filter(country_name != "Northern Ireland") %>% 
+  ggplot()+
+  aes(x = percent_tory,
+      y = region_name,
+      fill = ..x..) +
+  geom_density_ridges_gradient(quantile_lines = TRUE)+
+  scale_fill_continuous()
+
+tenure <-
+  read_csv("tenure.csv")
+
+head(tenure)
+head(election)
+
+tenure <- mutate(tenure, ons_id = code)
+
+names(tenure)
+
+both_things <- inner_join(tenure,
+                          election,
+                          id = ons_id)
+
+both_things %>% 
+  mutate(percent_social_rented = 
+           rented_social/households,
+         first_party = fct_reorder(first_party, percent_social_rented)) %>% 
+  filter(first_party != 'Green', first_party != 'Spk') %>% 
+  ggplot()+
+  aes(x = percent_social_rented, 
+      y = first_party, 
+      fill = ..x..) +
+  geom_density_ridges_gradient()+
+  scale_fill_continuous()
+
+
+#how does the distribution of whether people own their houses with mortgages vary by regions of England and Wales?  
+
+both_things %>% 
+  mutate(percent_social_rented = 
+           rented_social/households) %>% 
+  ggplot()+
+  aes(x = owned_mortgage, 
+      y = region_name, 
+      fill = ..x..) +
+  geom_density_ridges_gradient()+
+  scale_fill_continuous()
+
+#outputs
+
+brexit_stuff <- read_csv("brexit_stuff.csv")
+
+brexit_model <- lm(PCTLEAVE ~ 
+                     DEGREES + 
+                     NOQUALS + 
+                     BADHEALTH +
+                     Country, data = brexit_stuff)
+summary(brexit_model)
+
+plot(brexit_model)
+
+ggplot(data = brexit_model) +
+  aes(x = .fitted, y = .resid) +
+  geom_point()
+
+library(coefplot)
+
+coefplot(brexit_model)+
+  labs(x = "Coefficient size",
+       y = "Variable", 
+       title = "Predictors of % voting Brexit, by LA",
+       subtitle = "Data from the Electoral Commission")+
+  theme_bw()
+
+library(broom)
+
+tidy(brexit_model) %>% 
+  mutate(term = fct_recode(term,
+                           "Intercept" = 
+                             "(Intercept)",
+                           "% with degrees" = 
+                             "DEGREES",
+                           "% with no qualifications" = 
+                             "NOQUALS",
+                           "% with bad health" = 
+                             "BADHEALTH",
+                           "Scotland" = 
+                             "CountryS",
+                           "Wales" = 
+                             "CountryW")) %>% 
+  ggplot() +
+  aes(y = term,
+      x = estimate,
+      xmin = estimate - 1.96*std.error,
+      xmax = estimate + 1.96*std.error) +
+  geom_point() +
+  geom_pointrange()
+
+
+pokemon_model <- lm(HP ~ 
+                     Speed + 
+                     Defense + 
+                     Type +
+                     generation, data = pokemon)
+
+
+tidy(pokemon_model) %>% 
+  ggplot() +
+  aes(y = term,
+      x = estimate,
+      xmin = estimate - 1.96*std.error,
+      xmax = estimate + 1.96*std.error) +
+  geom_vline(xintercept = 0, 
+             color = "red", size=1)+
+  geom_point() +
+  geom_pointrange()+
+  labs(x = "Estimate",
+       y = "Predictors", 
+       title = "Predictors of Pokemon health points")
+
+#petitions
+implement_lockdown <- fromJSON("https://petition.parliament.uk/petitions/301397.json")
+implement_lockdown <- implement_lockdown$data$attributes$signatures_by_constituency
+head(implement_lockdown)
+
+reimburse_students <- fromJSON("https://petition.parliament.uk/petitions/302855.json")
+reimburse_students <- reimburse_students$data$attributes$signatures_by_constituency
+head(reimburse_students)
+
+implement_lockdown <- mutate(implement_lockdown, 
+                             ons_id = ons_code,
+                             implement_lockdown = signature_count)
+
+reimburse_students <- mutate(reimburse_students, 
+                             ons_id = ons_code,
+                             reimburse_students = signature_count) %>% 
+  select(ons_id, reimburse_students)
+
+petitions <- inner_join(reimburse_students, implement_lockdown, id = ons_code)
+petitions_2 <- inner_join(petitions, election, id = ons_code)
+head(petitions_2)
+
+petitions_2 %>% 
+  mutate(lockdown_percent = implement_lockdown/electorate,
+         students_percent = reimburse_students/electorate) %>% 
+  ggplot()+
+  aes(x = lockdown_percent, y = students_percent) +
+  geom_point()  
+
+petitions_2 %>% 
+  mutate(lockdown_percent = implement_lockdown/electorate,
+         students_percent = reimburse_students/electorate,
+         tory_percent = con/valid_votes) %>% 
+  ggplot()+
+  aes(x = lockdown_percent, y = students_percent, colour = country_name) +
+  geom_point()+
+  scale_colour_viridis_d()
+
+petitions_2 %>% 
+  mutate(lockdown_percent = implement_lockdown/electorate,
+         students_percent = reimburse_students/electorate,
+         tory_percent = con/valid_votes) %>% 
+  ggplot()+
+  aes(x = lockdown_percent, y = students_percent) +
+  geom_point()+
+  facet_wrap(~first_party)+
+  scale_y_continuous(labels = percent) +
+  scale_x_continuous(labels = percent) 

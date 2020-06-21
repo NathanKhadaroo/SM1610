@@ -1,0 +1,226 @@
+---
+title: "Exploring fix my street data"
+output:
+   html_document:
+    df_print: paged
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(gender)
+library(knitr)
+library(sf)
+```
+
+#### Loading the data
+
+The data is a years worth of fms reports webscraped and cleaned by Reka.
+
+```{r, warning=FALSE}
+fms_clean <- read_csv("./Data/clean_fms.csv")
+```
+
+#### Checking for NA's
+
+
+```{r }
+fms_clean %>% 
+  select_if(function(x) any(is.na(x))) %>% 
+  map(~sum(is.na(.)))
+```
+
+### Looking at the catgory variable
+
+We can look for which categories are most common:
+
+```{r}
+fms_clean %>% 
+  count(category, sort = TRUE)
+```
+
+We can try plotting some reports on categories related to pedestrians over time:
+
+```{r, warning=FALSE}
+fms_clean %>%
+  filter(category %in% c( "Pavements/footpaths",
+                          "Dog Fouling",
+                          "Street lighting"),
+         year %in% 2017 :2018,
+         day %in% 1:31) %>% 
+  transmute(date = paste0(year, "-", month, "-", day ),
+            date = lubridate::ymd(date),
+            category) %>% 
+  group_by(category, date) %>% 
+  tally() %>% 
+  filter(n < 150) %>% 
+  ggplot(aes(date,
+                          n,
+                          colour = category))+
+  geom_point()+
+  geom_smooth()
+```
+
+Dog fouling reports seem to occur consistently throughout the year, street lighting issues are more commonly reported in winter than in summer, and Pavement/footmath issues are more reported in summer.
+
+### Looking at the who variable
+
+We can have a look at how many reports are anonymous:
+
+```{r}
+fms_clean %>% 
+  filter(who == "anon") %>% 
+  count()
+```
+
+160986 of the reports are anonymous (ie ~ 66.5%). We know from earlier that a further 2816 (~ 1%) are NA's.
+
+Let's drop these for now.
+
+```{r}
+fms_names <- fms_clean %>% 
+  select(who) %>% 
+  filter(!(who == "anon"), na.rm=TRUE)
+
+fms_names
+```
+
+Examining the names visually we can see that some users used their name to communicate a message, instead of their identities!
+
+For example:
+   
+   [991]"mr please will you jist fix this quick aye"
+   
+   [977; 969; 355- 366; 252; 182; 104] "Mr lookout for darkness.....and Mr lookout for pot holes.."
+   
+   [638] "Mr Dodging the weeds / avoiding the brambles /stepping over dog mess !"
+   
+   [527] "Mr enough isenough"
+   
+   [491 - 494] "Mr Eyesore"
+   
+   [495] "MR AND MRS CONCERNED"
+   
+   [447] "Mr tax payer"
+   
+   [292] "Mr Just Looking Out For Everyones Safety"
+   
+   [40] "Mrs fed up"
+   
+   [41-42] "mrs fed up"
+   
+As well as some edge cases:
+
+   [281, 283-284] "Mr Fixit"
+
+   [54] "Mr my twomey"
+   
+Perhaps their ***really is*** a Mr Fixit?
+
+##### Can we infer gender from the who variable?
+
+There are a few things we can try to make some inferences about the gender of report makers from this information.
+
+First a number of people seem to be made by people who identify as councillors.
+
+```{r}
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("Cllr|Councillor", ignore_case = TRUE)) %>% 
+  length()
+```
+
+There are 1432 reports made by people with Cllr or Councillor in their identification. Most of them seem to be the politician type of Councillor so we should be able to find open data on their gender!
+
+We can also look at how many people included a gendered title:
+```{r}
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("Mrs |Mrs\\.|Mrs\\)|Mrs", ignore_case = TRUE))%>% 
+  length()
+
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("^Ms |^Ms\\.|Ms\\)", ignore_case = TRUE))%>% 
+  length()
+
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("Mr\\.|^Mr ", ignore_case = TRUE))%>% 
+  length()
+
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("Fr |Father ", ignore_case = TRUE))%>% 
+  length()
+
+fms_names %>% 
+  as_vector() %>% 
+  str_subset(regex("^Sr |sister", ignore_case = TRUE))%>% 
+  length()
+```
+
+There are 518 people with Mrs in their names, and 34 with Ms; these are probably women!
+There are 1238 people with Mr in their names, and two clergymen; these are probably men!
+
+However most of the values for who are simply name, without a title. One approach we could try would be to use the gender package by Lincoln Mullen to estimate the gender using a vareity of methods <https://cran.r-project.org/web/packages/gender/vignettes/predicting-gender.html>...
+
+..
+
+### Using longitude and latitude
+
+We know that there are effects on reporting behavior associated with the presence of certain types of infrastucture such as schools.
+
+We can download data on schools in the UK from <https://get-information-schools.service.gov.uk/>, this site provides options on what kind of data you can download, however it does not seem to be working! So for now we can download all the data and do some filtering ourselves. The follwing code gives us a tibble with the names, easting numbers, and northing numbers of each school of teh desired type in the UK. 
+
+```{r, message=FALSE, warning=FALSE}
+schools <- read_csv("Data/edubasealldata20200621.csv") %>% 
+  clean_names() %>% 
+  filter(!type_of_establishment_name %in% c("MiscellaneousSpecial",
+                                            "post 16 institution",
+                                            "Further education",
+                                            "Secure units",
+                                            "Higher education institutions",
+                                            "University technical college",
+                                            "City technology college")) %>%
+  select(establishment_name, easting, northing) %>% 
+  drop_na()
+
+schools
+```
+
+The location of schools are in easting/northing numbers, we can use the sf package to convert them to latitude and longitude (the same system as our fms data).
+
+
+```{r}
+schools%>%
+  st_as_sf(coords = c("easting", "northing"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>% 
+  as_tibble() %>% 
+  transmute(school_name = schools$establishment_name,
+            lat = Y,
+            lng = X
+            )
+```
+
+Need to use this data to create two new collumns in fms_clean:
+-one column with the name of the closest school (not essential)
+-another column with the distance of the report to the nearest school 
+
+using st_nn?
+
+fms_clean %>% 
+  mutate( dist_from_school =????
+    
+  )
+
+
+
+
+
+
+
+

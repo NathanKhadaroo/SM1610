@@ -87,7 +87,7 @@ fms_names <- fms_clean %>%
 fms_names
 ```
 
-Examining the names visually we can see that some users used their name to communicate a message, instead of their identities!
+Examining the names visually, we can see that some users used their name to communicate a message, rather than their identities!
 
 For example:
    
@@ -117,7 +117,9 @@ As well as some edge cases:
 
    [54] "Mr my twomey"
    
-Perhaps their ***really is*** a Mr Fixit?
+Perhaps there ***really is*** a Mr Fixit?
+
+There are also 
 
 ##### Can we infer gender from the who variable?
 
@@ -195,7 +197,7 @@ The location of schools are in easting/northing numbers, we can use the sf packa
 
 
 ```{r}
-schools%>%
+schools <- schools%>%
   st_as_sf(coords = c("easting", "northing"), crs = 27700) %>%
   st_transform(4326) %>%
   st_coordinates() %>% 
@@ -206,20 +208,45 @@ schools%>%
             )
 ```
 
-Need to use this data to create two new collumns in fms_clean:
--one column with the name of the closest school (not essential)
--another column with the distance of the report to the nearest school 
-
-using st_nn?
-
-fms_clean %>% 
-  mutate( dist_from_school =????
-    
-  )
+```{r}
+fms_clean <- fms_clean %>% 
+  mutate( id = row_number() ) %>% 
+  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
+  
+schools.sf <- schools%>% 
+  mutate( id = row_number()) %>% 
+  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
 
 
 
+x <- fms_sample %>% 
+  group_by( id ) %>%
+  mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
+          distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
+          )
 
+x$distance_from_school %>% mean()
+```
+
+#creating sf objects
+
+fms_clean <- fms_clean %>% 
+  mutate( id = row_number() ) %>% 
+  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
+  
+schools.sf <- schools%>% 
+  mutate( id = row_number()) %>% 
+  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
+
+
+
+x <- fms_sample %>% 
+  group_by( id ) %>%
+  mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
+          distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
+          )
+
+x$distance_from_school %>% mean()
 
 
 

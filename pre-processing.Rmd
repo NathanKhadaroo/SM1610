@@ -171,11 +171,11 @@ However most of the values for who are simply name, without a title. One approac
 
 ..
 
-### Using longitude and latitude
+### Using longitude and latitude variables
 
 We know that there are effects on reporting behavior associated with the presence of certain types of infrastucture such as schools.
 
-We can download data on schools in the UK from <https://get-information-schools.service.gov.uk/>, this site provides options on what kind of data you can download, however it does not seem to be working! So for now we can download all the data and do some filtering ourselves. The follwing code gives us a tibble with the names, easting numbers, and northing numbers of each school of teh desired type in the UK. 
+We can download data on schools in the UK from <https://get-information-schools.service.gov.uk/>, this site provides options on what kind of data you can download, however it does not seem to be working! So for now we can download all the data and do some filtering ourselves. The follwing code gives us a tibble with the names, easting numbers, and northing numbers of each school of the desired type in the UK. 
 
 ```{r, message=FALSE, warning=FALSE}
 schools <- read_csv("Data/edubasealldata20200621.csv") %>% 
@@ -208,6 +208,8 @@ schools <- schools%>%
             )
 ```
 
+We then turn these objects into sf objects, and the use the st_nearest_feature and st_distance to add two rows to our dataset, one for the closest school to the report, and one for the distance from the school to the report.
+
 ```{r}
 fms_clean <- fms_clean %>% 
   mutate( id = row_number() ) %>% 
@@ -219,34 +221,18 @@ schools.sf <- schools%>%
 
 
 
-x <- fms_sample %>% 
+fms_clean <- fms_clean %>% 
   group_by( id ) %>%
   mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
           distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
           )
 
-x$distance_from_school %>% mean()
+fms_clean$distance_from_school %>% mean()
+
+fms_clean %>% write_csv("./Data/clean_fms2.csv")
 ```
 
-#creating sf objects
 
-fms_clean <- fms_clean %>% 
-  mutate( id = row_number() ) %>% 
-  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
-  
-schools.sf <- schools%>% 
-  mutate( id = row_number()) %>% 
-  st_as_sf( coords = c("lng", "lat"), crs = 4326 )
-
-
-
-x <- fms_sample %>% 
-  group_by( id ) %>%
-  mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
-          distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
-          )
-
-x$distance_from_school %>% mean()
 
 
 

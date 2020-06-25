@@ -221,15 +221,15 @@ schools.sf <- schools%>%
 
 
 
-fms_clean <- fms_clean %>% 
-  group_by( id ) %>%
-  mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
-          distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
-          )
-
-fms_clean$distance_from_school %>% mean()
-
-fms_clean %>% write_csv("./Data/clean_fms2.csv")
+# fms_clean <- fms_clean %>% 
+#   group_by( id ) %>%
+#   mutate(nearest_school = st_nearest_feature( geometry, schools.sf ),
+#           distance_from_school = as.numeric( st_distance( geometry, schools.sf[nearest_school,] ) ),
+#           )
+# 
+# fms_clean$distance_from_school %>% mean()
+# 
+# fms_clean %>% write_csv("./Data/clean_fms2.csv")
 ```
 
 
